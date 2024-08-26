@@ -4,12 +4,32 @@ import matplotlib.pyplot as plt
 
 allowed_periods = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 
-stock_symbol = input("Enter the stock ticker symbol: ")
-print(f"Enter the lookback period for the moving average and z-score calculation (must be one of {allowed_periods}): ")
-lookback_period = input()
+def is_valid_ticker(ticker):
+    return ticker.isalnum() and 1 <= len(ticker) <= 5
 
-if lookback_period not in allowed_periods:
-    raise ValueError(f"Invalid period '{lookback_period}', must be one of {allowed_periods}")
+def is_valid_period(period):
+    return period in allowed_periods
+
+while True:
+    stock_symbol = input("Enter the stock ticker symbol: ").upper()
+    if is_valid_ticker(stock_symbol):
+        df_test = yf.download(stock_symbol, period='1d')
+        if not df_test.empty:
+            break
+        else:
+            print("Ticker symbol not found or no data available. Please enter a valid stock ticker (e.g., AAPL).")
+    else:
+        print("Invalid ticker symbol. Please use a valid stock ticker in correct form (e.g., AAPL).")
+
+while True:
+    print("Enter the lookback period for the moving average and z-score calculation (must be one of the following):")
+    for period in allowed_periods:
+        print(f"  - {period}")
+    lookback_period = input()
+    if is_valid_period(lookback_period):
+        break
+    else:
+        print(f"Invalid period. Please choose one of the listed periods.")
 
 df_stock = yf.download(stock_symbol, period=lookback_period)
 df_etf = yf.download('SPY', period=lookback_period)
