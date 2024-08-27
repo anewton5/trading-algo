@@ -87,38 +87,30 @@ vader = SentimentIntensityAnalyzer()
 df_news['compound'] = df_news['title'].apply(lambda title: vader.polarity_scores(title)['compound'])
 df_news['date'] = pd.to_datetime(df_news.date).dt.date
 
-# Calculate average sentiment scores
 mean_df = df_news.groupby(['ticker', 'date'])['compound'].mean().unstack()
 
-# Debug print to check mean_df
 print("mean_df:")
 print(mean_df.head())
 
-# Reshape mean_df to long format
 mean_df_long = mean_df.stack().reset_index()
 mean_df_long.columns = ['ticker', 'date', 'compound']
 
-# Debug print to check mean_df_long
 print("mean_df_long:")
 print(mean_df_long.head())
 
-# Add sentiment scores to the stock DataFrame
 df_stock['date'] = df_stock.index.date
 df_stock = df_stock.merge(mean_df_long[['date', 'compound']], on='date', how='left')
 
-# Debug print to check df_stock after merge
 print("df_stock after merge:")
 print(df_stock.head())
 
 df_stock['positive_sentiment'] = df_stock['compound'].apply(lambda x: x if x > 0 else 0)
 df_stock['negative_sentiment'] = df_stock['compound'].apply(lambda x: x if x < 0 else 0)
 
-# Calculate z-score for stock prices
 rolling_mean = df_stock['Close'].rolling(window=lookback_weeks).mean()
 rolling_std = df_stock['Close'].rolling(window=lookback_weeks).std()
 df_stock['z_score_stock'] = (df_stock['Close'] - rolling_mean) / rolling_std
 
-# Debug print to check z_score_stock
 print("df_stock with z_score_stock:")
 print(df_stock[['Close', 'z_score_stock']].head())
 
@@ -132,15 +124,13 @@ def calculate_rsi(data, window):
 
 df_stock['rsi_stock'] = calculate_rsi(df_stock['Close'], window=14)
 
-# Debug print to check rsi_stock
 print("df_stock with rsi_stock:")
 print(df_stock[['Close', 'rsi_stock']].head())
 
-# Existing plotting code with added sentiment indicators
 def determine_outperformance(row):
-    z_score_threshold = 1.0  # Example threshold
-    rsi_overbought = 70  # Example RSI overbought threshold
-    rsi_oversold = 30  # Example RSI oversold threshold
+    z_score_threshold = 1.0  
+    rsi_overbought = 70  
+    rsi_oversold = 30 
 
     if row["z_score_stock"] > z_score_threshold and row["rsi_stock"] > rsi_overbought:
         return "Strong Overperforming"
@@ -155,24 +145,18 @@ def determine_outperformance(row):
 
 df_stock["outperformance"] = df_stock.apply(determine_outperformance, axis=1)
 
-# Fill NaN values in the compound column with 0 (neutral sentiment)
 df_stock.fillna({'compound': 0}, inplace=True)
 
-# Drop rows with NaN values in the z_score_stock and rsi_stock columns
 df_stock.dropna(subset=['z_score_stock', 'rsi_stock'], inplace=True)
 
-# Debug print to check df_stock after handling NaN values
 print("df_stock after handling NaN values:")
 print(df_stock.head())
 
-# Print the column names to verify
 print(df_stock.columns)
 
-# If the Date column is named differently, rename it
 if 'date' in df_stock.columns:
     df_stock.rename(columns={'date': 'Date'}, inplace=True)
 
-# Debug print to check the first few rows of df_stock
 print(df_stock.head())
 
 plt.figure(figsize=(14, 7))
